@@ -27,6 +27,13 @@ GRADES = {
     "warm": ("eq=contrast=1.1:brightness=-0.02:saturation=0.72:gamma=0.95,"
              "curves=master='0/0.02 0.15/0.07 0.5/0.47 1/0.95',"
              "colorbalance=rs=0.05:bs=-0.04:rm=0.03:bm=-0.02"),
+    # night drives: deep blacks, teal shadows, warm highlights (street lights)
+    "night": ("eq=contrast=1.12:brightness=-0.04:saturation=0.8:gamma=0.9,"
+              "curves=master='0/0 0.1/0.02 0.5/0.45 1/0.97',"
+              "colorbalance=rs=-0.05:gs=0.01:bs=0.06:rh=0.05:bh=-0.04"),
+    # natural colour with a bit more punch (city / travel)
+    "pop": ("eq=contrast=1.08:saturation=1.12:gamma=0.97,"
+            "curves=master='0/0 0.25/0.21 0.75/0.79 1/1'"),
     "none": "null",
 }
 

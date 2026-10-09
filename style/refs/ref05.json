@@ -1,0 +1,28 @@
+{
+  "file": "Video-54562.mp4",
+  "duration": 6.57,
+  "width": 1276,
+  "height": 718,
+  "fps": 25.0,
+  "picture_box": "1276:718:0:0",
+  "shots": 9,
+  "cuts_per_second": 1.22,
+  "median_shot": 0.44,
+  "longest_shot": 2.01,
+  "shot_lengths": [
+    0.44,
+    0.12,
+    0.36,
+    1.04,
+    0.6,
+    0.16,
+    0.44,
+    1.4,
+    2.01
+  ],
+  "bursts": [],
+  "bpm": 117.5,
+  "brightness": 0.165,
+  "dark_frames": 0.038,
+  "saturation": 0.058
+}

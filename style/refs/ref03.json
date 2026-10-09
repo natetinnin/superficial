@@ -1,0 +1,39 @@
+{
+  "file": "Video-51255.mp4",
+  "duration": 10.19,
+  "width": 1276,
+  "height": 718,
+  "fps": 29.97,
+  "picture_box": "1276:718:0:0",
+  "shots": 14,
+  "cuts_per_second": 1.28,
+  "median_shot": 0.07,
+  "longest_shot": 3.35,
+  "shot_lengths": [
+    0.03,
+    0.37,
+    0.03,
+    1.94,
+    0.03,
+    0.03,
+    0.07,
+    0.13,
+    2.24,
+    0.03,
+    1.8,
+    0.07,
+    0.07,
+    3.35
+  ],
+  "bursts": [
+    [
+      2.37,
+      2.64,
+      4
+    ]
+  ],
+  "bpm": 172.3,
+  "brightness": 0.508,
+  "dark_frames": 0.0,
+  "saturation": 0.008
+}

@@ -48,3 +48,12 @@ def test_short_clips_are_slowed_not_frozen():
                  shuffle=False, beats_per_cut=2, phrase_bars=0, burst_beats=0, burst_frames=2)
     hold = segs[0]                                   # 2 beats = 1.25 s from a 0.8 s clip
     assert hold.speed == 0.64 and hold.start == 0.0
+
+
+def test_presets_only_use_real_options():
+    import inspect
+    import re
+    from superficial import cli
+    opts = {o[2:].replace("-", "_") for o in re.findall(r'"(--[a-z-]+)"', inspect.getsource(cli.main))}
+    for name, values in cli.PRESETS.items():
+        assert set(values) <= opts, (name, set(values) - opts)

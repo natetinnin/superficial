@@ -16,6 +16,30 @@ from . import audio, plan, render
 from .plan import probe_duration
 
 
+# Looks distilled from the reference edits in style/ (see style/STYLE.md).
+# A preset only changes defaults: any flag given on the command line still wins.
+PRESETS: dict[str, dict] = {
+    # ref01: dark fashion/film moodboard, holds on the beat + 2-frame bursts each phrase
+    "noir-fashion": dict(grade="noir", grain=10, fps=24, phrase_bars=2, burst_beats=2,
+                         burst_frames=2, tail=1.2),
+    # ref02, ref07: black & white luxury (cars, jewels, yachts, galas), steady quick cuts
+    "luxury-mono": dict(grade="mono", grain=4, fps=30, beats_per_cut=1, phrase_bars=0, tail=0.4),
+    # ref03: black & white action (surf), longer holds broken by single-frame bursts
+    "action-mono": dict(grade="mono", grain=6, fps=30, beats_per_cut=4, phrase_bars=2,
+                        burst_beats=1, burst_frames=1, tail=0.3),
+    # ref04: night drive, long cinematic holds, teal/orange, no bursts
+    "night-drive": dict(grade="night", grain=4, fps=30, beats_per_cut=4, phrase_bars=0, tail=1.0),
+    # ref05: warm filmic colour, medium holds, captions
+    "film-color": dict(grade="warm", grain=8, fps=25, beats_per_cut=2, phrase_bars=0, tail=0.6),
+    # ref06: city / travel, natural punchy colour, fast cuts with bursts
+    "city-travel": dict(grade="pop", grain=3, fps=30, beats_per_cut=1, phrase_bars=2,
+                        burst_beats=2, burst_frames=2, tail=0.5),
+    # ref08: event promo, 4:5, rapid photo flashes then text cards
+    "event-promo": dict(grade="none", grain=0, fps=30, size="1080x1350", beats_per_cut=1,
+                        phrase_bars=1, burst_beats=2, burst_frames=4, tail=1.5),
+}
+
+
 def _beats(args, duration: float) -> audio.Beats:
     if args.music:
         return audio.track(args.music, args.music_start, duration, args.bpm)
@@ -74,12 +98,26 @@ def cmd_beats(args) -> None:
         print(f"{t:8.3f}  {'#' * int(s * 30)}")
 
 
+def cmd_analyze(args) -> None:
+    from . import analyze
+    for i, f in enumerate(args.videos):
+        sheet = None
+        if args.sheet:
+            sheet = args.sheet if len(args.videos) == 1 else args.sheet.replace(".", f"_{i}.", 1)
+        r = analyze.analyze(f, sheet)
+        print(analyze.to_json(r) if args.json else analyze.summary(r))
+        if sheet:
+            print(f"  contact sheet: {sheet}", file=sys.stderr)
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="superficial", description="Beat-synced moody edit generator")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     m = sub.add_parser("make", help="plan + render an edit from clips and a song")
     m.add_argument("clips", nargs="+", help="video/image files or folders")
+    m.add_argument("--preset", choices=sorted(PRESETS),
+                   help="a look from style/STYLE.md (sets defaults; other flags override)")
     m.add_argument("-m", "--music", help="audio track (mp3/wav/m4a/...)")
     m.add_argument("--music-start", type=float, default=0.0, help="start offset into the song (s)")
     m.add_argument("-d", "--duration", type=float, default=28.0)
@@ -90,7 +128,7 @@ def main(argv: list[str] | None = None) -> None:
     m.add_argument("--size", help="explicit WxH, e.g. 1080x1350")
     m.add_argument("--fit", default="auto", choices=["auto", "crop", "pad"],
                    help="fill the frame (crop), sit on black (pad), or pad only when shapes differ a lot (auto)")
-    m.add_argument("--grade", default="noir", help="noir | mono | warm | none | raw ffmpeg filter chain")
+    m.add_argument("--grade", default="noir", help="noir | mono | warm | night | pop | none | raw ffmpeg filter chain")
     m.add_argument("--grain", type=int, default=10, help="film grain strength (0 = off)")
     m.add_argument("--letterbox", type=float, help="add bars for an aspect, e.g. 2.39")
     m.add_argument("-t", "--text", action="append",
@@ -126,6 +164,18 @@ def main(argv: list[str] | None = None) -> None:
     b.add_argument("-d", "--duration", type=float)
     b.add_argument("--bpm", type=float)
     b.set_defaults(func=cmd_beats)
+
+    an = sub.add_parser("analyze", help="measure a reference edit (cuts, bursts, tempo, look)")
+    an.add_argument("videos", nargs="+")
+    an.add_argument("--sheet", help="write a contact sheet (one frame per shot) to this image")
+    an.add_argument("--json", action="store_true", help="full machine-readable report")
+    an.set_defaults(func=cmd_analyze)
+
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--preset")
+    known, _ = pre.parse_known_args(argv)
+    if known.preset in PRESETS:
+        m.set_defaults(**PRESETS[known.preset])
 
     args = p.parse_args(argv)
     args.func(args)

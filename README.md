@@ -61,6 +61,20 @@ Other options: `--vertical` (1080×1920 for Reels/TikTok), `--hd` (1920×1080),
 `--size 1080x1350`, `--letterbox 2.39`, `--fps`, `--in-order` (use clips in
 filename order instead of shuffling), `--seed` (different shuffle and in-points).
 
+## Presets and references
+
+`--preset` picks a look distilled from the reference edits in `style/`:
+`noir-fashion`, `luxury-mono`, `action-mono`, `night-drive`, `film-color`,
+`city-travel`, `event-promo`. See [`style/STYLE.md`](style/STYLE.md) for what each
+reference looks like (with contact sheets) and which techniques are still to build.
+
+Break down a new reference edit (cut rhythm, bursts, tempo, brightness/colour)
+and get a contact sheet with one frame per shot:
+
+```bash
+superficial analyze reference.mp4 --sheet ref.jpg
+```
+
 ## Fine-tuning by hand
 
 Save the plan, edit it, and render it again:
