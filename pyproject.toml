@@ -1,0 +1,19 @@
+[project]
+name = "superficial"
+version = "0.1.0"
+description = "Beat-synced, moody 'aesthetic edit' video generator (ffmpeg + numpy)"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.22", "Pillow>=9.2"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+superficial = "superficial.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["superficial"]

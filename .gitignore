@@ -1,0 +1,9 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+demo/
+*.mp4
+*.mov
+*.wav
+*.mp3
+edl.json
