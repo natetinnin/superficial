@@ -7,4 +7,10 @@ demo/
 *.wav
 *.mp3
 edl.json
-drafts/
+# media lives on disk only (repo is public); each folder has a tracked README listing it
+references/*
+!references/README.md
+footage/*
+!footage/README.md
+drafts/*
+!drafts/README.md

@@ -16,6 +16,18 @@ minimal bold text. Default to vertical 1080x1920 unless the user says otherwise.
 The user often adds the music in the Instagram/TikTok app, so render without
 audio and use `--bpm` when no song file is given.
 
+## Folders
+
+| Folder | What | In git? |
+|---|---|---|
+| `references/` | the reference edits, `refNN-description.mp4` | no, only its README (repo is public) |
+| `footage/` | source clips/stills; `ref01/` = shots cut from ref01, `mine/` = the user's own | no, only its README |
+| `drafts/` | rendered edits, `draftNN-format-source.mp4` | no, only its README |
+| `style/` | STYLE.md + a contact sheet and measurements per reference | yes |
+
+Each media folder's README lists exactly which files belong there. If a file is
+missing on this machine, tell the user which one, using the README.
+
 ## Using the tool
 
 ```bash
@@ -50,4 +62,5 @@ Footage that is already graded needs `--grade none`, or it goes almost black.
 - `superficial/cli.py`: commands and presets
 - `tests/`: `pytest -q`
 
-Renders go in `drafts/` (git-ignored). Videos (`*.mp4`, `*.mov`) are git-ignored.
+Media (`*.mp4`, `*.mov`, and everything in `references/`, `footage/`, `drafts/` except the READMEs)
+is git-ignored. Never commit it: the repo is public.
