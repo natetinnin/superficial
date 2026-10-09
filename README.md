@@ -50,6 +50,13 @@ superficial make demo/clips -m demo/track.wav -d 20 --outro demo/outro/*.png \
 | Clothing-label ending | Outro stills with a slow push-in, then black, music fades out | `--outro`, `--outro-hold`, `--tail` |
 | Tiny credit | Faint centered watermark | `--watermark` |
 
+Landscape footage in a vertical edit sits in a band on black instead of being
+cropped to a narrow strip (`--fit auto`, the default; force with `--fit crop|pad`).
+Clips shorter than their slot are slowed down (to half speed at most) rather than frozen.
+
+Footage that is already graded (e.g. clips taken from another edit) looks best
+with `--grade none --grain 6`; the default grade would make it far too dark.
+
 Other options: `--vertical` (1080×1920 for Reels/TikTok), `--hd` (1920×1080),
 `--size 1080x1350`, `--letterbox 2.39`, `--fps`, `--in-order` (use clips in
 filename order instead of shuffling), `--seed` (different shuffle and in-points).

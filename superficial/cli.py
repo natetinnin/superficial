@@ -47,7 +47,7 @@ def cmd_make(args) -> None:
                       phrase_bars=args.phrase_bars, burst_beats=args.burst_beats,
                       burst_frames=args.burst_frames)
     meta = dict(music=args.music, music_start=args.music_start, duration=duration,
-                fps=args.fps, width=w, height=h, grade=args.grade, grain=args.grain,
+                fps=args.fps, width=w, height=h, fit=args.fit, grade=args.grade, grain=args.grain,
                 letterbox=args.letterbox, captions=args.text or [], watermark=args.watermark,
                 font=args.font, tail=args.tail, bpm=round(beats.bpm, 2))
     n_burst = sum(s.kind == "burst" for s in segs)
@@ -88,6 +88,8 @@ def main(argv: list[str] | None = None) -> None:
     m.add_argument("--vertical", action="store_true", help="1080x1920 for Reels/TikTok")
     m.add_argument("--hd", action="store_true", help="1920x1080 instead of 1280x720")
     m.add_argument("--size", help="explicit WxH, e.g. 1080x1350")
+    m.add_argument("--fit", default="auto", choices=["auto", "crop", "pad"],
+                   help="fill the frame (crop), sit on black (pad), or pad only when shapes differ a lot (auto)")
     m.add_argument("--grade", default="noir", help="noir | mono | warm | none | raw ffmpeg filter chain")
     m.add_argument("--grain", type=int, default=10, help="film grain strength (0 = off)")
     m.add_argument("--letterbox", type=float, help="add bars for an aspect, e.g. 2.39")

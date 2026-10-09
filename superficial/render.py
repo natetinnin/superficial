@@ -98,23 +98,54 @@ def _run(cmd: list[str]) -> None:
         raise RuntimeError(f"ffmpeg failed:\n{' '.join(cmd)}\n{r.stderr[-2000:]}")
 
 
-def conform(seg: Segment, out: str, w: int, h: int, fps: float) -> None:
+def probe_size(path: str) -> tuple[int, int]:
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                          "stream=width,height", "-of", "csv=p=0", path],
+                         capture_output=True, text=True).stdout.strip().split("\n")[0]
+    try:
+        a, b = out.split(",")[:2]
+        return int(a), int(b)
+    except ValueError:
+        return 0, 0
+
+
+def fit_box(path: str, w: int, h: int, fit: str) -> tuple[int, int]:
+    """Size the picture occupies inside the w x h frame. Equal to (w, h) when it fills
+    the frame (crop); smaller when it sits on black (pad). `auto` pads only when the
+    source shape is far from the frame shape, e.g. landscape footage in a vertical edit."""
+    if fit == "crop":
+        return w, h
+    sw, sh = probe_size(path)
+    if not sw or not sh:
+        return w, h
+    src, dst = sw / sh, w / h
+    if fit == "auto" and max(src, dst) / min(src, dst) < 1.35:
+        return w, h
+    if src > dst:
+        return w, int(w / src) // 2 * 2
+    return int(h * src) // 2 * 2, h
+
+
+def conform(seg: Segment, out: str, w: int, h: int, fps: float, fit: str = "auto") -> None:
     enc = ["-an", "-frames:v", str(seg.frames), "-c:v", "libx264", "-preset", "veryfast",
            "-crf", "14", "-pix_fmt", "yuv420p", "-r", f"{fps}", "-video_track_timescale", "24000", out]
-    fit = f"scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h},setsar=1"
     if seg.kind == "black" or not seg.path:
         cmd = ["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", f"color=black:s={w}x{h}:r={fps}"]
         _run(cmd + enc)
         return
+    bw, bh = fit_box(seg.path, w, h, fit)
+    pad = f",pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black" if (bw, bh) != (w, h) else ""
     if seg.is_image:
         # slow push-in on stills
-        W, H = w * 2, h * 2
+        W, H = bw * 2, bh * 2
         vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
               f"zoompan=z='min(1+0.0009*on,1.25)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-              f":d=1:s={w}x{h}:fps={fps},setsar=1")
+              f":d=1:s={bw}x{bh}:fps={fps},setsar=1{pad}")
         cmd = ["ffmpeg", "-y", "-v", "error", "-loop", "1", "-framerate", f"{fps}", "-i", seg.path, "-vf", vf]
     else:
-        vf = f"fps={fps},{fit},tpad=stop_mode=clone:stop_duration=30"
+        slow = f"setpts={1 / seg.speed:.4f}*PTS," if seg.speed != 1.0 else ""
+        vf = (f"{slow}fps={fps},scale={bw}:{bh}:force_original_aspect_ratio=increase:flags=lanczos,"
+              f"crop={bw}:{bh},setsar=1{pad},tpad=stop_mode=clone:stop_duration=30")
         cmd = ["ffmpeg", "-y", "-v", "error", "-ss", f"{seg.start}", "-i", seg.path, "-vf", vf]
     _run(cmd + enc)
 
@@ -126,7 +157,8 @@ def render(segs: list[Segment], meta: dict, out: str, *, jobs: int = 0, keep: bo
     try:
         paths = [os.path.join(work, f"seg{i:04d}.mp4") for i in range(len(segs))]
         with ThreadPoolExecutor(max_workers=jobs or min(8, os.cpu_count() or 2)) as ex:
-            list(ex.map(lambda a: conform(a[0], a[1], w, h, fps), zip(segs, paths)))
+            fit = meta.get("fit", "auto")
+            list(ex.map(lambda a: conform(a[0], a[1], w, h, fps, fit), zip(segs, paths)))
         listing = os.path.join(work, "list.txt")
         Path(listing).write_text("".join(f"file '{p}'\n" for p in paths))
         joined = os.path.join(work, "joined.mp4")

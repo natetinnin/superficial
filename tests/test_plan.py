@@ -40,3 +40,11 @@ def test_caption_parse():
     c = Caption.parse("6.5-8:I CAN'T|BREATHE")
     assert (c.start, c.end, c.small, c.big) == (6.5, 8.0, "I CAN'T", "BREATHE")
     assert Caption.parse("1-2:HELLO").small == ""
+
+
+def test_short_clips_are_slowed_not_frozen():
+    media = [Media("short.mp4", 0.8, False)]
+    segs = build(media, [], grid(), duration=5, fps=24, outro_hold=1, tail=0, seed=1,
+                 shuffle=False, beats_per_cut=2, phrase_bars=0, burst_beats=0, burst_frames=2)
+    hold = segs[0]                                   # 2 beats = 1.25 s from a 0.8 s clip
+    assert hold.speed == 0.64 and hold.start == 0.0

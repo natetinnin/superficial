@@ -11,6 +11,8 @@ from pathlib import Path
 from .audio import Beats
 
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
+MIN_SPEED = 0.5  # slowest slow-motion used to stretch short clips
+
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi", ".gif"}
 
 
@@ -28,6 +30,7 @@ class Segment:
     start: float      # in-point inside the source (s)
     frames: int       # length in output frames
     kind: str         # "hold" | "burst" | "outro"
+    speed: float = 1.0  # < 1 = slow motion (used when a clip is shorter than its slot)
 
 
 def probe_duration(path: str) -> float:
@@ -53,7 +56,7 @@ def scan_media(paths: list[str]) -> list[Media]:
     for f in files:
         is_img = f.suffix.lower() in IMAGE_EXT
         media.append(Media(str(f), 0.0 if is_img else probe_duration(str(f)), is_img))
-    return [m for m in media if m.is_image or m.duration > 0.3]
+    return [m for m in media if m.is_image or m.duration > 0.15]
 
 
 class Picker:
@@ -64,15 +67,25 @@ class Picker:
         self.queue: list[Media] = []
         self.last: Media | None = None
 
-    def next(self) -> Media:
+    def next(self, need: float = 0.0) -> Media:
+        """Next clip in the queue that can fill `need` seconds, slowed down if needed."""
         if not self.queue:
             self.queue = list(self.media)
             if self.shuffle:
                 self.rng.shuffle(self.queue)
                 if len(self.queue) > 1 and self.queue[0] is self.last:
                     self.queue.append(self.queue.pop(0))
+        for i, m in enumerate(self.queue):
+            if (m.is_image or m.duration >= need * MIN_SPEED) and (m is not self.last or len(self.media) == 1):
+                self.last = self.queue.pop(i)
+                return self.last
         self.last = self.queue.pop(0)
         return self.last
+
+    def speed(self, m: Media, seconds: float) -> float:
+        if m.is_image or m.duration >= seconds:
+            return 1.0
+        return max(MIN_SPEED, round(m.duration / seconds, 3))
 
     def in_point(self, m: Media, seconds: float) -> float:
         if m.is_image:
@@ -154,9 +167,11 @@ def build(media: list[Media], outro: list[Media], beats: Beats, *, duration: flo
     for a, b in zip(bounds, bounds[1:]):
         if b <= a:
             continue
-        m = picker.next()
         n = b - a
-        segs.append(Segment(m.path, m.is_image, picker.in_point(m, n / fps), n, kinds.get(a, "hold")))
+        m = picker.next(n / fps)
+        sp = picker.speed(m, n / fps)
+        start = picker.in_point(m, n / fps) if sp == 1.0 else 0.0
+        segs.append(Segment(m.path, m.is_image, start, n, kinds.get(a, "hold"), sp))
 
     for m in outro:
         n = round(outro_hold * fps)
